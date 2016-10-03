@@ -1,3 +1,3 @@
 ﻿function thing() {
-    var a  = "thing"
+    var a  = "thing again"
 }
