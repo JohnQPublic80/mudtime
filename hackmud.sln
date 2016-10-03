@@ -1,0 +1,18 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 14
+VisualStudioVersion = 14.0.24720.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{6D70476C-4448-43C7-92ED-0D26A0E6402E}"
+	ProjectSection(SolutionItems) = preProject
+		c7001.js = c7001.js
+		cowsays.js = cowsays.js
+		testscript.js = testscript.js
+		visualstudiotest.js = visualstudiotest.js
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
