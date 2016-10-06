@@ -1,11 +1,22 @@
 function(context, args){
-    var output = ""
+    if(args == null){
+        return printHelp()
+    }else if(args.action == "hit"){
+        var thing = ""
+    }else if(args.action == "stay"){
+        return determineWinner()
+    }else{
+        return printHelp()
+    }
 
+    /*These arrays are manipulated in the functions below.
+      Terrible practice, I know -- but can't do object-oriented stuff
+      in hackmud.*/
     var gameDeck = buildDeck()
     gameDeck = shuffleDeck(gameDeck)
-
     var dealerHand = []
     var playerHand = []
+
     var playedThisRound = false
 
     for(var i=0;i<12;i++){
@@ -22,13 +33,16 @@ function(context, args){
 
         if(!playedThisRound) break
     }
+
+    var winState = determineWinner(playerHand, dealerHand)
     
     return "Your hand:\n"+
             renderCards(playerHand)+
            "Value: "+getHandValue(playerHand)+"\n\n"+
            "Dealers hand:\n"+
             renderCards(dealerHand)+
-           "Value: "+getHandValue(dealerHand)
+           "Value: "+getHandValue(dealerHand)+"\n"+
+           winState
 
     function card(s, v){
         return {suite:s, value:v}
@@ -96,16 +110,21 @@ function(context, args){
 
     function getHandValue(hand){
         var value = 0
+        var numberOfAces = 0
 
         for(var i=0;i<hand.length;i++){
             if(hand[i].value == "K" || hand[i].value == "Q" || hand[i].value == "J"){
                 value += 10
             }else if(hand[i].value == "A"){
-                if(value >= 11) value += 10
-                else value += 1
+                numberOfAces += 1
             }else{
                 value += parseInt(hand[i].value)
             }
+        }
+
+        for(var i=0;i<numberOfAces;i++){
+            if(value <= 11) value += 10
+            else value += 1
         }
 
         return value
@@ -115,8 +134,41 @@ function(context, args){
         //TO-DO: Retrieve the current state of the game from the database.
     }
 
-    function determineWinner(){
-        //TO-DO: Figure out who won the game, the dealer or the player?
+    function determineWinner(playerHand, dealerHand){
+        var playerScore = 21 - getHandValue(playerHand)
+        var dealerScore = 21 - getHandValue(dealerHand)
+
+        if(playerScore < 0 && dealerScore < 0){
+            return "It's a push!"
+        }else if(playerScore < 0){
+            return "You bust, the dealer wins!"
+        }else if(dealerScore < 0){
+            return "The dealer busts, you win!"
+        }else if(playerScore == 0 && dealerScore == 0){
+            return "It's a push!"
+        }else if(playerScore == 0){
+            return "Blackjack! You win!"
+        }else if(dealerScore == 0){
+            return "Dealer has blackjack! Dealer wins!"
+        }else{
+            if(Math.abs(playerScore) < Math.abs(dealerScore)){
+                return "You win!"
+            }else{
+                return "Dealer wins!"
+            }
+        }
+
+    }
+
+    function printHelp(){
+        return "Welcome to the casino!\n"+
+               "Dealers hit until 17.\n"+
+               "In order to play BlackJack, you need to action:\"hit\" action:\"stay\"\n"+
+               "For example, to start a game: johnqpublic.blackjack{action:\"hit\"}"
+    }
+
+    function playGame(){
+
     }
 
     /*
