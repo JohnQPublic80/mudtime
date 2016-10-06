@@ -2,7 +2,7 @@ function(context, args)
 {
 	var ret = ""
 	
-	var script = #s.nuutec.external().split(/\n/)	
+	var script = #s.nuutec.out().split(/\n/)	
 	var opts = script[script.length-1].split(/ \|/)
 	
 	//p is the password
