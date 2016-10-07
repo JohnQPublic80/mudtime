@@ -1,13 +1,22 @@
 function(context, args){
+    var player = context.caller
+    var lib = #s.scripts.lib()
+
+
+    var gameObject = #db.f({game:"Black Jack", player:player}).first()
+
     if(args == null){
         return printHelp()
     }else if(args.action == "hit"){
-        var thing = ""
+        if(gameObject == null) gameObject = makeGameObject(player, lib)
     }else if(args.action == "stay"){
+        if(gameObject == null) return printHelp()
         return determineWinner()
     }else{
         return printHelp()
     }
+
+    return "\""+#db.f({})+"\""
 
     /*These arrays are manipulated in the functions below.
       Terrible practice, I know -- but can't do object-oriented stuff
@@ -130,10 +139,6 @@ function(context, args){
         return value
     }
 
-    function getGameState(){
-        //TO-DO: Retrieve the current state of the game from the database.
-    }
-
     function determineWinner(playerHand, dealerHand){
         var playerScore = 21 - getHandValue(playerHand)
         var dealerScore = 21 - getHandValue(dealerHand)
@@ -151,28 +156,26 @@ function(context, args){
         }else if(dealerScore == 0){
             return "Dealer has blackjack! Dealer wins!"
         }else{
-            if(Math.abs(playerScore) < Math.abs(dealerScore)){
+            if(Math.abs(playerScore) == Math.abs(dealerScore)){
+                return "It's a push!"
+            }else if(Math.abs(playerScore) < Math.abs(dealerScore)){
                 return "You win!"
-            }else{
+            }else if(Math.abs(playerScore) > Math.abs(dealerScore)){
                 return "Dealer wins!"
+            }else{
+                return "I don't know this ending condition... YOU WIN!"
             }
         }
-
     }
 
     function printHelp(){
         return "Welcome to the casino!\n"+
-               "Dealers hit until 17.\n"+
+               "Dealers hit until 17. All winning bets pay 2:1.\n"+
                "In order to play BlackJack, you need to action:\"hit\" action:\"stay\"\n"+
                "For example, to start a game: johnqpublic.blackjack{action:\"hit\"}"
     }
 
-    function playGame(){
-
+    function makeGameObject(player, lib){
+        
     }
-
-    /*
-        var caller = context.caller
-	    var l = #s.scripts.lib()
-    */
 }
