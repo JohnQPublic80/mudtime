@@ -2,13 +2,14 @@ function(context, args){
     var player = context.caller
     var lib = #s.scripts.lib()
 
-
     var gameObject = #db.f({game:"Black Jack", player:player}).first()
 
     if(args == null){
         return printHelp()
     }else if(args.action == "hit"){
-        if(gameObject == null) gameObject = makeGameObject(player, lib)
+        if(gameObject == null){
+            gameObject = makeGameObject(player, lib, 1000).first()
+        }
     }else if(args.action == "stay"){
         if(gameObject == null) return printHelp()
         return determineWinner()
@@ -16,12 +17,12 @@ function(context, args){
         return printHelp()
     }
 
-    return "\""+#db.f({})+"\""
+    return gameObject.gameDeck[0]
 
     /*These arrays are manipulated in the functions below.
       Terrible practice, I know -- but can't do object-oriented stuff
       in hackmud.*/
-    var gameDeck = buildDeck()
+    /*var gameDeck = buildDeck()
     gameDeck = shuffleDeck(gameDeck)
     var dealerHand = []
     var playerHand = []
@@ -51,7 +52,7 @@ function(context, args){
            "Dealers hand:\n"+
             renderCards(dealerHand)+
            "Value: "+getHandValue(dealerHand)+"\n"+
-           winState
+           winState*/
 
     function card(s, v){
         return {suite:s, value:v}
@@ -175,7 +176,12 @@ function(context, args){
                "For example, to start a game: johnqpublic.blackjack{action:\"hit\"}"
     }
 
-    function makeGameObject(player, lib){
-        
+    function makeGameObject(player, lib, playerBet){
+        var gameDeck = buildDeck()
+        gameDeck = shuffleDeck(gameDeck)
+
+        #db.i({game:"Black Jack", player:player, gameStart:lib.get_date(), amountBet:playerBet, amountPaid:0, gameActive:true, houseWin:false, gameDeck:gameDeck, playerHand:[], dealerHand:[]})
+
+        return #db.f({game:"Black Jack", player:player, gameActive:true}).first()
     }
 }
