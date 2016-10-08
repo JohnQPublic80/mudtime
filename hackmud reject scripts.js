@@ -23,3 +23,38 @@
             ret += "\n"
         }
     }
+
+    /*These arrays are manipulated in the functions below.
+      Terrible practice, I know -- but can't do object-oriented stuff
+      in hackmud.*/
+    /*var gameDeck = buildDeck()
+    gameDeck = shuffleDeck(gameDeck)
+    var dealerHand = []
+    var playerHand = []
+
+    var playedThisRound = false
+
+    for(var i=0;i<12;i++){
+        playedThisRound = false
+
+        if(getHandValue(playerHand) < 17){
+            playerHand = dealCard(gameDeck, playerHand)
+            playedThisRound = true
+        }
+        if(getHandValue(dealerHand) < 17){
+            dealerHand = dealCard(gameDeck, dealerHand)
+            playedThisRound = true
+        }
+
+        if(!playedThisRound) break
+    }
+
+    var winState = determineWinner(playerHand, dealerHand)
+    
+    return "Your hand:\n"+
+            renderCards(playerHand)+
+           "Value: "+getHandValue(playerHand)+"\n\n"+
+           "Dealers hand:\n"+
+            renderCards(dealerHand)+
+           "Value: "+getHandValue(dealerHand)+"\n"+
+           winState*/

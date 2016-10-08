@@ -2,57 +2,79 @@ function(context, args){
     var player = context.caller
     var lib = #s.scripts.lib()
 
-    var gameObject = #db.f({game:"Black Jack", player:player}).first()
+    //TO-DO: The dealers first card needs to be drawn and hidden.
+
+    if( !(player == "johnqpublic" || player == "junebug" || player == "jdmw") ){
+        return "This isn't a place for children."
+    }
+
+    var gameObject = #db.f({game:"Black Jack", player:player, gameActive:true}).first()
+    if(gameObject != null ){
+        var gameDeck = gameObject.gameDeck
+        var dealerHand = gameObject.dealerHand
+        var playerHand = gameObject.playerHand
+    }
+    var winState = "playing"
 
     if(args == null){
         return printHelp()
     }else if(args.action == "hit"){
         if(gameObject == null){
-            gameObject = makeGameObject(player, lib, 1000).first()
+            gameObject = makeGameObject(player, lib, 1000)
+
+            gameDeck = gameObject.gameDeck
+            dealerHand = gameObject.dealerHand
+            playerHand = gameObject.playerHand
+
+            playerHit(playerHand)
+            playerHit(playerHand)
+            dealerHand = dealCard(gameDeck, dealerHand)
+            //dealerHand = dealCard(gameDeck, dealerHand)
+
+            saveGameState(player, 1000, 0, true, "playing", gameDeck, playerHand, dealerHand, getHandValue(playerHand), getHandValue(dealerHand))
+        }else{
+            playerHit(playerHand)
+            if(getHandValue(playerHand) > 21){
+                winState = determineWinner(playerHand, dealerHand)
+                saveGameState(player, 1000, 0, false, winState.winner, gameDeck, playerHand, dealerHand, getHandValue(playerHand), getHandValue(dealerHand))
+                return "Your hand:\n"+
+				       renderCards(playerHand)+
+				       "Value: "+getHandValue(playerHand)+"\n\n"+
+				       "Dealers hand:\n"+
+				       renderCards(dealerHand)+
+				       "Value: "+getHandValue(dealerHand)+"\n"+
+                       winState.msg
+            }else{
+                saveGameState(player, 1000, 0, true, "playing", gameDeck, playerHand, dealerHand, getHandValue(playerHand), getHandValue(dealerHand))
+            }
         }
     }else if(args.action == "stay"){
         if(gameObject == null) return printHelp()
-        return determineWinner()
+        if(playerHand.length == 0) return printHelp()
+
+        dealerHand = finishDealerHand(dealerHand)
+        winState = determineWinner(playerHand, dealerHand)
+
+        saveGameState(player, 1000, 0, false, winState.winner, gameDeck, playerHand, dealerHand, getHandValue(playerHand), getHandValue(dealerHand))
+
+		return "Your hand:\n"+
+				renderCards(playerHand)+
+				"Value: "+getHandValue(playerHand)+"\n\n"+
+				"Dealers hand:\n"+
+				renderCards(dealerHand)+
+				"Value: "+getHandValue(dealerHand)+"\n"+
+                winState.msg
+
     }else{
         return printHelp()
     }
 
-    return gameObject.gameDeck[0]
-
-    /*These arrays are manipulated in the functions below.
-      Terrible practice, I know -- but can't do object-oriented stuff
-      in hackmud.*/
-    /*var gameDeck = buildDeck()
-    gameDeck = shuffleDeck(gameDeck)
-    var dealerHand = []
-    var playerHand = []
-
-    var playedThisRound = false
-
-    for(var i=0;i<12;i++){
-        playedThisRound = false
-
-        if(getHandValue(playerHand) < 17){
-            playerHand = dealCard(gameDeck, playerHand)
-            playedThisRound = true
-        }
-        if(getHandValue(dealerHand) < 17){
-            dealerHand = dealCard(gameDeck, dealerHand)
-            playedThisRound = true
-        }
-
-        if(!playedThisRound) break
-    }
-
-    var winState = determineWinner(playerHand, dealerHand)
-    
     return "Your hand:\n"+
             renderCards(playerHand)+
            "Value: "+getHandValue(playerHand)+"\n\n"+
            "Dealers hand:\n"+
             renderCards(dealerHand)+
-           "Value: "+getHandValue(dealerHand)+"\n"+
-           winState*/
+           "Value: "+getHandValue(dealerHand)+"\n"
 
     function card(s, v){
         return {suite:s, value:v}
@@ -94,11 +116,6 @@ function(context, args){
         var pullCard = Math.floor(Math.random() * gameDeck.length)
 
         hand.push(gameDeck[pullCard])
-        /* It is fucked up, but it works... since JS is pass by 
-           reference for arrays. I'm taking the card out here and
-           it affects the original array, which is good; but a fucky
-           way to do it. I blame having being able to object oriented
-           design in hackmud.*/
         gameDeck.splice(pullCard, 1)
 
         return hand
@@ -133,7 +150,7 @@ function(context, args){
         }
 
         for(var i=0;i<numberOfAces;i++){
-            if(value <= 11) value += 10
+            if(value <= 10) value += 11
             else value += 1
         }
 
@@ -141,30 +158,35 @@ function(context, args){
     }
 
     function determineWinner(playerHand, dealerHand){
+        var pushWin = "push"
+        var dealerWin = "dealer"
+        var playerWin = "player"
+        var unknownWin = "unknown"
+
         var playerScore = 21 - getHandValue(playerHand)
         var dealerScore = 21 - getHandValue(dealerHand)
 
         if(playerScore < 0 && dealerScore < 0){
-            return "It's a push!"
+            return {msg:"It's a push!", winner:pushWin}
         }else if(playerScore < 0){
-            return "You bust, the dealer wins!"
+            return {msg:"You bust, the dealer wins!", winner:dealerWin}
         }else if(dealerScore < 0){
-            return "The dealer busts, you win!"
+            return {msg:"The dealer busts, you win!", winner:playerWin}
         }else if(playerScore == 0 && dealerScore == 0){
-            return "It's a push!"
+            return {msg:"It's a push!", winner:pushWin}
         }else if(playerScore == 0){
-            return "Blackjack! You win!"
+            return {msg:"Blackjack! You win!", winner:playerWin}
         }else if(dealerScore == 0){
-            return "Dealer has blackjack! Dealer wins!"
+            return {msg:"Dealer has blackjack! Dealer wins!", winner:dealerWin}
         }else{
             if(Math.abs(playerScore) == Math.abs(dealerScore)){
-                return "It's a push!"
+                return {msg:"It's a push!", winner:pushWin}
             }else if(Math.abs(playerScore) < Math.abs(dealerScore)){
-                return "You win!"
+                return {msg:"You win!", winner:playerWin}
             }else if(Math.abs(playerScore) > Math.abs(dealerScore)){
-                return "Dealer wins!"
+                return {msg:"Dealer wins!", winner:dealerWin}
             }else{
-                return "I don't know this ending condition... YOU WIN!"
+                return {msg:"I don't know this ending condition... YOU WIN!", winner:unknownWin}
             }
         }
     }
@@ -180,8 +202,50 @@ function(context, args){
         var gameDeck = buildDeck()
         gameDeck = shuffleDeck(gameDeck)
 
-        #db.i({game:"Black Jack", player:player, gameStart:lib.get_date(), amountBet:playerBet, amountPaid:0, gameActive:true, houseWin:false, gameDeck:gameDeck, playerHand:[], dealerHand:[]})
+        #db.i({game:"Black Jack", player:player, gameStart:lib.get_date(), amountBet:playerBet, 
+               amountPaid:0, gameActive:true, winner:"playing", gameDeck:gameDeck, playerHand:[], 
+               dealerHand:[], playerValue:0, dealerValue:0})
 
         return #db.f({game:"Black Jack", player:player, gameActive:true}).first()
+    }
+
+    function finishDealerHand(dealerHand){
+        var playedThisRound = false
+        for(var i=0;i<12;i++){
+            playedThisRound = false
+            if(getHandValue(dealerHand) < 17){
+                dealerHand = dealCard(gameDeck, dealerHand)
+                playedThisRound = true
+            }
+            if(!playedThisRound) break
+        }
+
+        return dealerHand
+    }
+
+    function playerHit(playerHand){
+        playerHand = dealCard(gameDeck, playerHand)
+        return playerHand
+    }
+
+    function saveGameState(player, amountBet, amountPaid, gameActive, winner, gameDeck, playerHand, dealerHand, playerValue, dealerValue){
+        #db.u({game:"Black Jack", player:player, gameActive:true},
+              {$set:{amountBet:amountBet, amountPaid:amountPaid, gameActive:gameActive, winner:winner, gameDeck:gameDeck, playerHand:playerHand,
+                     dealerHand:dealerHand, playerValue:playerValue, dealerValue:dealerValue}})
+    }
+
+    /*function printEndText(playerHand, dealerHand, winState){
+        debugOutput("printEndText")
+		return "Your hand:\n"+
+				renderCards(playerHand)+
+				"Value: "+getHandValue(playerHand)+"\n\n"+
+				"Dealers hand:\n"+
+				renderCards(dealerHand)+
+				"Value: "+getHandValue(dealerHand)+"\n"+
+                winState
+    }*/
+
+    function debugOutput(message){
+        #s.chats.tell({to:"johnqpublic", msg:message})
     }
 }
